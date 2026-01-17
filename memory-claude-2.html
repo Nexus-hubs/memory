@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="description" content="Memory Claude 2.0 - An elegant memory matching game">
+  <title>Memory Claude 2.0</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      /* Black interface */
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --bg-tertiary: #111111;
+      --bg-card: #0d0d0d;
+      --bg-card-back: #080808;
+
+      /* Beige accent colors */
+      --beige-light: #f5f0e6;
+      --beige: #e8dcc8;
+      --beige-dark: #d4c4a8;
+      --beige-muted: #b8a888;
+
+      /* Accent colors */
+      --accent-success: #7cb87c;
+      --accent-error: #c87c7c;
+
+      /* Text */
+      --text-primary: #f5f0e6;
+      --text-secondary: #b8a888;
+      --text-muted: #666655;
+
+      /* Borders & effects */
+      --border-subtle: rgba(245, 240, 230, 0.08);
+      --border-light: rgba(245, 240, 230, 0.15);
+      --glow-match: 0 0 20px rgba(124, 184, 124, 0.4);
+      --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.5);
+      --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.7);
+
+      /* Timing */
+      --transition-fast: 120ms ease;
+      --transition-normal: 200ms ease;
+      --flip-duration: 350ms;
+
+      /* Spacing */
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+      /* Font */
+      --font-mono: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    }
+
+    html {
+      height: 100%;
+      height: -webkit-fill-available;
+    }
+
+    body {
+      min-height: 100%;
+      min-height: -webkit-fill-available;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.4;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      height: 100dvh;
+      padding: calc(8px + var(--safe-top)) 8px calc(8px + var(--safe-bottom));
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--beige);
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--beige);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bg-primary);
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .stats {
+      display: flex;
+      gap: 14px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--beige);
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .controls {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--beige-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      outline: none;
+      font-family: inherit;
+    }
+
+    .btn:hover, .btn:active {
+      background: var(--bg-card);
+      color: var(--beige);
+      border-color: var(--border-light);
+    }
+
+    .btn:focus-visible {
+      box-shadow: 0 0 0 2px var(--beige-muted);
+    }
+
+    .btn-icon {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      border-radius: 10px;
+    }
+
+    .btn-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .btn-primary {
+      background: var(--beige);
+      border-color: var(--beige);
+      color: var(--bg-primary);
+      font-weight: 600;
+    }
+
+    .btn-primary:hover, .btn-primary:active {
+      background: var(--beige-light);
+      border-color: var(--beige-light);
+      color: var(--bg-primary);
+    }
+
+    /* Game Grid */
+    .game-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 4px;
+      min-height: 0;
+    }
+
+    .game-grid {
+      display: grid;
+      gap: clamp(4px, 1.2vmin, 8px);
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+      perspective: 1200px;
+    }
+
+    .game-grid[data-cols="4"] {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .game-grid[data-cols="6"] {
+      grid-template-columns: repeat(6, 1fr);
+    }
+
+    /* Card */
+    .card {
+      aspect-ratio: 3 / 4;
+      position: relative;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform var(--flip-duration) cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+
+    .card:focus {
+      outline: none;
+    }
+
+    .card:focus-visible .card-face {
+      box-shadow: 0 0 0 2px var(--beige);
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card.matched .card-front {
+      box-shadow: var(--glow-match);
+      border-color: var(--accent-success);
+    }
+
+    .card.matched .card-front .card-figure {
+      color: var(--accent-success);
+    }
+
+    .card.shake {
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: rotateY(180deg) translateX(0); }
+      20% { transform: rotateY(180deg) translateX(-4px); }
+      40% { transform: rotateY(180deg) translateX(4px); }
+      60% { transform: rotateY(180deg) translateX(-4px); }
+      80% { transform: rotateY(180deg) translateX(4px); }
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: clamp(6px, 2vmin, 12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-card);
+      border: 1px solid var(--border-subtle);
+      transition: box-shadow var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .card:not(.flipped):not(.matched):hover .card-back {
+      box-shadow: var(--shadow-card-hover);
+    }
+
+    @media (hover: hover) {
+      .card:not(.flipped):not(.matched):hover .card-back {
+        transform: translateY(-2px);
+      }
+    }
+
+    .card-back {
+      background: var(--bg-card-back);
+      border-color: var(--border-subtle);
+    }
+
+    .card-back-pattern {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.15;
+    }
+
+    .card-back-pattern svg {
+      width: 45%;
+      height: 45%;
+      color: var(--beige);
+    }
+
+    .card-front {
+      background: var(--bg-secondary);
+      transform: rotateY(180deg);
+    }
+
+    .card-figure {
+      width: 60%;
+      height: 60%;
+      color: var(--beige);
+      transition: color var(--transition-normal);
+    }
+
+    .card-label {
+      position: absolute;
+      bottom: 4px;
+      font-size: clamp(0.5rem, 1.5vmin, 0.65rem);
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .show-labels .card-label {
+      opacity: 1;
+    }
+
+    /* Screens */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.92);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity var(--transition-normal), visibility var(--transition-normal);
+      padding: 16px;
+      padding-top: calc(16px + var(--safe-top));
+      padding-bottom: calc(16px + var(--safe-bottom));
+    }
+
+    .screen.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .screen-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      padding: 28px 24px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      transform: scale(0.96);
+      transition: transform var(--transition-normal);
+    }
+
+    .screen.active .screen-content {
+      transform: scale(1);
+    }
+
+    .screen-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--beige);
+    }
+
+    .screen-subtitle {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+    }
+
+    .difficulty-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .difficulty-btn {
+      padding: 14px 10px;
+      background: var(--bg-tertiary);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+      font-family: inherit;
+    }
+
+    .difficulty-btn:hover, .difficulty-btn:active {
+      border-color: var(--beige-muted);
+      background: var(--bg-card);
+    }
+
+    .difficulty-btn.selected {
+      border-color: var(--beige);
+      background: rgba(245, 240, 230, 0.05);
+    }
+
+    .difficulty-name {
+      font-weight: 600;
+      color: var(--beige);
+      margin-bottom: 2px;
+      font-size: 0.95rem;
+    }
+
+    .difficulty-info {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .settings-row:last-child {
+      border-bottom: none;
+    }
+
+    .settings-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 28px;
+      background: var(--bg-tertiary);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .toggle.active {
+      background: var(--beige-dark);
+      border-color: var(--beige-dark);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      background: var(--beige-light);
+      border-radius: 50%;
+      transition: transform var(--transition-fast);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .toggle.active::after {
+      transform: translateX(20px);
+      background: var(--bg-primary);
+    }
+
+    /* Victory */
+    .victory-stats {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .victory-stat {
+      flex: 1;
+      padding: 14px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .victory-stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--beige);
+      font-family: var(--font-mono);
+      line-height: 1.2;
+    }
+
+    .victory-stat-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+
+    .victory-message {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+      padding: 14px;
+    }
+
+    /* Confetti */
+    .confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 200;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      opacity: 0;
+    }
+
+    @keyframes confetti-fall {
+      0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+    }
+
+    /* Accessibility */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    [aria-live] {
+      position: absolute;
+      left: -10000px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
+    /* Responsive - Tablet */
+    @media (min-width: 481px) and (max-width: 768px) {
+      .app {
+        max-width: 540px;
+        padding: 12px;
+      }
+
+      .header {
+        padding: 12px 16px;
+      }
+    }
+
+    /* Responsive - Desktop */
+    @media (min-width: 769px) {
+      .app {
+        max-width: 650px;
+        padding: 16px;
+      }
+
+      .header {
+        padding: 14px 20px;
+        border-radius: 16px;
+        margin-bottom: 12px;
+      }
+
+      .logo {
+        font-size: 1.1rem;
+      }
+
+      .stat-value {
+        font-size: 1.2rem;
+      }
+
+      .game-grid {
+        gap: 10px;
+      }
+
+      .card-face {
+        border-radius: 14px;
+      }
+
+      .screen-content {
+        padding: 32px;
+        max-width: 400px;
+      }
+    }
+
+    /* Small phones */
+    @media (max-width: 360px) {
+      .header {
+        padding: 8px 10px;
+      }
+
+      .logo span {
+        display: none;
+      }
+
+      .stats {
+        gap: 10px;
+      }
+
+      .stat-value {
+        font-size: 1rem;
+      }
+
+      .btn-icon {
+        width: 34px;
+        height: 34px;
+      }
+
+      .btn-icon svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    /* Landscape mobile */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .app {
+        flex-direction: row;
+        gap: 12px;
+        padding: 8px;
+      }
+
+      .header {
+        flex-direction: column;
+        justify-content: space-between;
+        width: auto;
+        padding: 12px;
+        margin-bottom: 0;
+      }
+
+      .logo span {
+        display: none;
+      }
+
+      .stats {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      .game-container {
+        flex: 1;
+      }
+
+      .game-grid[data-cols="4"] {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .game-grid[data-cols="6"] {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hidden SVG Sprite -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <style>
+        .fig-stroke { stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+        .fig-fill { fill: currentColor; }
+      </style>
+
+      <symbol id="card-pattern" viewBox="0 0 48 48">
+        <text x="24" y="30" text-anchor="middle" font-size="16" font-weight="700" fill="currentColor">MC</text>
+      </symbol>
+
+      <symbol id="fig-halo" viewBox="0 0 48 48">
+        <circle class="fig-stroke" cx="24" cy="24" r="14"/>
+        <circle class="fig-fill" cx="35" cy="16" r="2.5"/>
+      </symbol>
+
+      <symbol id="fig-prism" viewBox="0 0 48 48">
+        <polygon class="fig-stroke" points="24,8 40,38 8,38"/>
+        <polygon class="fig-stroke" points="24,18 32,34 16,34"/>
+      </symbol>
+
+      <symbol id="fig-orbit" viewBox="0 0 48 48">
+        <ellipse class="fig-stroke" cx="24" cy="24" rx="16" ry="8" transform="rotate(45 24 24)"/>
+        <ellipse class="fig-stroke" cx="24" cy="24" rx="16" ry="8" transform="rotate(-45 24 24)"/>
+        <circle class="fig-fill" cx="24" cy="24" r="3"/>
+      </symbol>
+
+      <symbol id="fig-beacon" viewBox="0 0 48 48">
+        <line class="fig-stroke" x1="24" y1="8" x2="24" y2="40"/>
+        <line class="fig-stroke" x1="16" y1="14" x2="24" y2="14"/>
+        <line class="fig-stroke" x1="32" y1="14" x2="24" y2="14"/>
+      </symbol>
+
+      <symbol id="fig-lattice" viewBox="0 0 48 48">
+        <rect class="fig-stroke" x="8" y="8" width="8" height="8"/>
+        <rect class="fig-stroke" x="20" y="8" width="8" height="8"/>
+        <rect class="fig-stroke" x="32" y="8" width="8" height="8"/>
+        <rect class="fig-stroke" x="8" y="20" width="8" height="8"/>
+        <rect class="fig-stroke" x="32" y="20" width="8" height="8"/>
+        <rect class="fig-stroke" x="8" y="32" width="8" height="8"/>
+        <rect class="fig-stroke" x="20" y="32" width="8" height="8"/>
+        <rect class="fig-stroke" x="32" y="32" width="8" height="8"/>
+      </symbol>
+
+      <symbol id="fig-arc" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M8,28 A16,16 0 0,1 40,28"/>
+        <line class="fig-stroke" x1="12" y1="28" x2="36" y2="28"/>
+      </symbol>
+
+      <symbol id="fig-node" viewBox="0 0 48 48">
+        <polygon class="fig-stroke" points="24,6 40,15 40,33 24,42 8,33 8,15"/>
+        <circle class="fig-fill" cx="24" cy="24" r="3"/>
+      </symbol>
+
+      <symbol id="fig-pulse" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M6,24 Q12,8 18,24 T30,24 T42,24"/>
+      </symbol>
+
+      <symbol id="fig-shard" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M12,38 L12,14 L36,10 L40,18 L36,22 L40,30 L36,38 Z"/>
+      </symbol>
+
+      <symbol id="fig-spiral" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M24,24 Q24,16 32,16 Q40,16 40,24 Q40,36 24,36 Q8,36 8,20"/>
+      </symbol>
+
+      <symbol id="fig-comet" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M32,24 Q32,16 24,12 Q16,16 16,24 Q16,32 24,36 Q32,32 32,24 Z"/>
+        <line class="fig-stroke" x1="36" y1="22" x2="40" y2="20"/>
+        <line class="fig-stroke" x1="38" y1="26" x2="44" y2="24"/>
+        <line class="fig-stroke" x1="36" y1="30" x2="40" y2="32"/>
+      </symbol>
+
+      <symbol id="fig-glyph" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M14,12 L34,12 L34,24 L14,24 L14,36 L34,36"/>
+      </symbol>
+
+      <symbol id="fig-anchor" viewBox="0 0 48 48">
+        <line class="fig-stroke" x1="24" y1="8" x2="24" y2="36"/>
+        <line class="fig-stroke" x1="12" y1="8" x2="36" y2="8"/>
+        <line class="fig-stroke" x1="16" y1="36" x2="16" y2="40"/>
+        <line class="fig-stroke" x1="32" y1="36" x2="32" y2="40"/>
+      </symbol>
+
+      <symbol id="fig-hinge" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M12,12 L12,36 L36,36"/>
+        <circle class="fig-fill" cx="12" cy="36" r="4"/>
+      </symbol>
+
+      <symbol id="fig-crown" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M8,36 L8,20 L16,28 L24,12 L32,28 L40,20 L40,36 Z"/>
+      </symbol>
+
+      <symbol id="fig-delta" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M24,8 L40,38 L24,30 L8,38 Z"/>
+      </symbol>
+
+      <symbol id="fig-spark" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M24,6 L26,20 L42,22 L28,26 L30,42 L24,28 L10,32 L20,24 L6,18 L22,20 Z"/>
+      </symbol>
+
+      <symbol id="fig-mask" viewBox="0 0 48 48">
+        <rect class="fig-stroke" x="8" y="12" width="32" height="24" rx="6"/>
+        <line class="fig-stroke" x1="14" y1="24" x2="20" y2="24"/>
+        <line class="fig-stroke" x1="28" y1="24" x2="34" y2="24"/>
+      </symbol>
+
+      <symbol id="fig-vault" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M10,40 L10,20 Q10,8 24,8 Q38,8 38,20 L38,40"/>
+        <rect class="fig-fill" x="21" y="8" width="6" height="6"/>
+      </symbol>
+
+      <symbol id="fig-kite" viewBox="0 0 48 48">
+        <polygon class="fig-stroke" points="24,6 38,24 24,42 10,24"/>
+        <line class="fig-stroke" x1="24" y1="6" x2="24" y2="42"/>
+      </symbol>
+
+      <symbol id="fig-wave" viewBox="0 0 48 48">
+        <polyline class="fig-stroke" points="8,16 24,8 40,16"/>
+        <polyline class="fig-stroke" points="8,26 24,18 40,26"/>
+        <polyline class="fig-stroke" points="8,36 24,28 40,36"/>
+      </symbol>
+
+      <symbol id="fig-lens" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M8,24 Q24,6 40,24 Q24,42 8,24"/>
+        <line class="fig-stroke" x1="8" y1="24" x2="40" y2="24"/>
+      </symbol>
+
+      <symbol id="fig-axis" viewBox="0 0 48 48">
+        <line class="fig-stroke" x1="24" y1="8" x2="24" y2="40"/>
+        <line class="fig-stroke" x1="8" y1="24" x2="40" y2="24"/>
+        <line class="fig-stroke" x1="32" y1="12" x2="38" y2="6"/>
+      </symbol>
+
+      <symbol id="fig-rune" viewBox="0 0 48 48">
+        <path class="fig-stroke" d="M8,8 L40,8 L40,40 L8,40 L8,16 L32,16 L32,32 L16,32 L16,24 L24,24"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="app">
+    <header class="header" role="banner">
+      <div class="logo">
+        <div class="logo-icon">2.0</div>
+        <span>Memory Claude</span>
+      </div>
+      <div class="stats" role="status" aria-live="polite">
+        <div class="stat">
+          <span class="stat-value" id="timer">0:00</span>
+          <span class="stat-label">Time</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="moves">0</span>
+          <span class="stat-label">Moves</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="pairs">0/0</span>
+          <span class="stat-label">Pairs</span>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn btn-icon" id="btn-sound" title="Toggle Sound" aria-label="Toggle sound">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+            <path id="sound-waves" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+        </button>
+        <button class="btn btn-icon" id="btn-settings" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+          </svg>
+        </button>
+        <button class="btn btn-icon" id="btn-restart" title="Restart" aria-label="Restart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 4v6h6"/>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="game-container" role="main">
+      <div class="game-grid" id="game-grid" role="grid" aria-label="Memory game board" data-cols="4"></div>
+    </main>
+
+    <div id="announcer" aria-live="assertive" aria-atomic="true"></div>
+  </div>
+
+  <!-- Start Screen -->
+  <div class="screen active" id="start-screen" role="dialog" aria-labelledby="start-title">
+    <div class="screen-content">
+      <h1 class="screen-title" id="start-title">Memory Claude 2.0</h1>
+      <p class="screen-subtitle">Match the pairs to win</p>
+      <div class="difficulty-grid" role="radiogroup" aria-label="Select difficulty">
+        <button class="difficulty-btn" data-difficulty="starter" role="radio" aria-checked="false">
+          <div class="difficulty-name">Starter</div>
+          <div class="difficulty-info">8 pairs</div>
+        </button>
+        <button class="difficulty-btn selected" data-difficulty="standard" role="radio" aria-checked="true">
+          <div class="difficulty-name">Standard</div>
+          <div class="difficulty-info">12 pairs</div>
+        </button>
+        <button class="difficulty-btn" data-difficulty="expert" role="radio" aria-checked="false">
+          <div class="difficulty-name">Expert</div>
+          <div class="difficulty-info">18 pairs</div>
+        </button>
+        <button class="difficulty-btn" data-difficulty="master" role="radio" aria-checked="false">
+          <div class="difficulty-name">Master</div>
+          <div class="difficulty-info">24 pairs</div>
+        </button>
+      </div>
+      <button class="btn btn-primary" id="btn-start" style="width: 100%; padding: 14px;">Start Game</button>
+    </div>
+  </div>
+
+  <!-- Settings Screen -->
+  <div class="screen" id="settings-screen" role="dialog" aria-labelledby="settings-title">
+    <div class="screen-content">
+      <h2 class="screen-title" id="settings-title">Settings</h2>
+      <div class="settings-list">
+        <div class="settings-row">
+          <span class="settings-label">Sound Effects</span>
+          <div class="toggle active" id="toggle-sfx" role="switch" aria-checked="true" tabindex="0"></div>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Background Music</span>
+          <div class="toggle active" id="toggle-music" role="switch" aria-checked="true" tabindex="0"></div>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">Show Labels</span>
+          <div class="toggle" id="toggle-labels" role="switch" aria-checked="false" tabindex="0"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-close-settings" style="width: 100%; margin-top: 20px; padding: 14px;">Close</button>
+    </div>
+  </div>
+
+  <!-- Victory Screen -->
+  <div class="screen" id="victory-screen" role="dialog" aria-labelledby="victory-title">
+    <div class="screen-content">
+      <h2 class="screen-title" id="victory-title">Victory!</h2>
+      <p class="victory-message" id="victory-message">Excellent memory!</p>
+      <div class="victory-stats">
+        <div class="victory-stat">
+          <div class="victory-stat-value" id="victory-time">0:00</div>
+          <div class="victory-stat-label">Time</div>
+        </div>
+        <div class="victory-stat">
+          <div class="victory-stat-value" id="victory-moves">0</div>
+          <div class="victory-stat-label">Moves</div>
+        </div>
+        <div class="victory-stat">
+          <div class="victory-stat-value" id="victory-mismatches">0</div>
+          <div class="victory-stat-label">Errors</div>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn" id="btn-new-game">Menu</button>
+        <button class="btn btn-primary" id="btn-play-again">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      difficulties: {
+        starter: { pairs: 8, figures: ['a1','a2','a3','a4','a5','a6','a7','a8'], cols: { mobile: 4, desktop: 4 } },
+        standard: { pairs: 12, figures: ['a1','a2','a3','a4','a5','a6','a7','a8','a9','b1','b2','b3'], cols: { mobile: 4, desktop: 6 } },
+        expert: { pairs: 18, figures: ['a1','a2','a3','a4','a5','a6','a7','a8','a9','b1','b2','b3','b4','b5','b6','b7','b8','b9'], cols: { mobile: 4, desktop: 6 } },
+        master: { pairs: 24, figures: ['a1','a2','a3','a4','a5','a6','a7','a8','a9','b1','b2','b3','b4','b5','b6','b7','b8','b9','c1','c2','c3','c4','c5','c6'], cols: { mobile: 4, desktop: 6 } }
+      },
+      figureNames: {
+        a1:'halo',a2:'prism',a3:'orbit',a4:'beacon',a5:'lattice',a6:'arc',a7:'node',a8:'pulse',a9:'shard',
+        b1:'spiral',b2:'comet',b3:'glyph',b4:'anchor',b5:'hinge',b6:'crown',b7:'delta',b8:'spark',b9:'mask',
+        c1:'vault',c2:'kite',c3:'wave',c4:'lens',c5:'axis',c6:'rune'
+      },
+      timing: { flipDuration: 350, mismatchReveal: 700, matchLock: 200, winDelay: 500 },
+      scoring: { mismatchPenalty: 2000 }
+    };
+
+    class AudioManager {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.sfxGain = null;
+        this.musicGain = null;
+        this.sfxEnabled = true;
+        this.musicEnabled = true;
+        this.ambientNodes = [];
+        this.isAmbientPlaying = false;
+      }
+
+      async init() {
+        if (this.ctx) return;
+        try {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.connect(this.ctx.destination);
+          this.sfxGain = this.ctx.createGain();
+          this.sfxGain.connect(this.masterGain);
+          this.sfxGain.gain.value = 0.25;
+          this.musicGain = this.ctx.createGain();
+          this.musicGain.connect(this.masterGain);
+          this.musicGain.gain.value = 0.12;
+          this.loadSettings();
+        } catch (e) { console.warn('Web Audio not supported'); }
+      }
+
+      loadSettings() {
+        this.sfxEnabled = localStorage.getItem('mc2-sfx') !== 'false';
+        this.musicEnabled = localStorage.getItem('mc2-music') !== 'false';
+        this.updateGains();
+      }
+
+      saveSettings() {
+        localStorage.setItem('mc2-sfx', this.sfxEnabled);
+        localStorage.setItem('mc2-music', this.musicEnabled);
+      }
+
+      updateGains() {
+        if (this.sfxGain) this.sfxGain.gain.value = this.sfxEnabled ? 0.25 : 0;
+        if (this.musicGain) this.musicGain.gain.value = this.musicEnabled ? 0.12 : 0;
+      }
+
+      playTone(freq, duration, type = 'sine', gainVal = 0.5) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+      }
+
+      playFlip() { this.playTone(600, 0.04, 'sine', 0.25); }
+
+      playMatch() {
+        this.playTone(440, 0.1, 'triangle', 0.35);
+        setTimeout(() => this.playTone(554, 0.12, 'triangle', 0.3), 60);
+      }
+
+      playMismatch() { this.playTone(150, 0.08, 'sine', 0.35); }
+
+      playWin() {
+        const notes = [220, 277, 330, 440, 554, 660];
+        notes.forEach((f, i) => setTimeout(() => this.playTone(f, 0.2, 'triangle', 0.25), i * 120));
+      }
+
+      startAmbient() {
+        if (!this.ctx || !this.musicEnabled || this.isAmbientPlaying) return;
+        this.isAmbientPlaying = true;
+        const createPad = (freq, detune = 0) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const filter = this.ctx.createBiquadFilter();
+          osc.type = 'sawtooth';
+          osc.frequency.value = freq;
+          osc.detune.value = detune;
+          filter.type = 'lowpass';
+          filter.frequency.value = 600;
+          filter.Q.value = 1.5;
+          gain.gain.value = 0;
+          gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 2.5);
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.musicGain);
+          osc.start();
+          const lfo = this.ctx.createOscillator();
+          const lfoGain = this.ctx.createGain();
+          lfo.frequency.value = 0.08 + Math.random() * 0.06;
+          lfoGain.gain.value = 200;
+          lfo.connect(lfoGain);
+          lfoGain.connect(filter.frequency);
+          lfo.start();
+          this.ambientNodes.push({ osc, gain, lfo });
+        };
+        createPad(55);
+        createPad(82.41, 4);
+        createPad(110, -4);
+      }
+
+      stopAmbient() {
+        if (!this.isAmbientPlaying) return;
+        this.isAmbientPlaying = false;
+        this.ambientNodes.forEach(({ osc, gain, lfo }) => {
+          gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+          setTimeout(() => { try { osc.stop(); lfo.stop(); } catch(e) {} }, 900);
+        });
+        this.ambientNodes = [];
+      }
+    }
+
+    class Shuffler {
+      static seededRandom(seed) {
+        return function() {
+          seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+          return seed / 0x7fffffff;
+        };
+      }
+
+      static shuffle(array, seed = Date.now()) {
+        const random = this.seededRandom(seed);
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      }
+
+      static generateDeck(figureIds, seed) {
+        const cards = [];
+        figureIds.forEach((id, index) => {
+          cards.push({ id: index * 2, figureId: id, matched: false });
+          cards.push({ id: index * 2 + 1, figureId: id, matched: false });
+        });
+        return this.shuffle(cards, seed);
+      }
+    }
+
+    class Renderer {
+      constructor(container) {
+        this.container = container;
+        this.cardElements = new Map();
+      }
+
+      renderGrid(cards, cols) {
+        this.container.innerHTML = '';
+        this.container.dataset.cols = cols;
+        this.cardElements.clear();
+        cards.forEach((card, index) => {
+          const el = this.createCardElement(card, index);
+          this.container.appendChild(el);
+          this.cardElements.set(card.id, el);
+        });
+      }
+
+      createCardElement(card, index) {
+        const figureName = CONFIG.figureNames[card.figureId];
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.dataset.id = card.id;
+        el.dataset.index = index;
+        el.tabIndex = 0;
+        el.role = 'gridcell';
+        el.setAttribute('aria-label', `Card ${index + 1}, face down`);
+        el.innerHTML = `
+          <div class="card-face card-back">
+            <div class="card-back-pattern"><svg><use href="#card-pattern"/></svg></div>
+          </div>
+          <div class="card-face card-front">
+            <svg class="card-figure"><use href="#fig-${figureName}"/></svg>
+            <span class="card-label">${card.figureId}</span>
+          </div>`;
+        return el;
+      }
+
+      flipCard(cardId, faceUp) {
+        const el = this.cardElements.get(cardId);
+        if (!el) return;
+        if (faceUp) {
+          el.classList.add('flipped');
+          const figureId = game.state.cards.find(c => c.id == cardId)?.figureId;
+          el.setAttribute('aria-label', `Card showing ${CONFIG.figureNames[figureId]}`);
+        } else {
+          el.classList.remove('flipped');
+          el.setAttribute('aria-label', `Card ${parseInt(el.dataset.index) + 1}, face down`);
+        }
+      }
+
+      showMatch(card1Id, card2Id) {
+        [card1Id, card2Id].forEach(id => {
+          const el = this.cardElements.get(id);
+          if (el) el.classList.add('matched');
+        });
+      }
+
+      showMismatch(card1Id, card2Id) {
+        [card1Id, card2Id].forEach(id => {
+          const el = this.cardElements.get(id);
+          if (el) {
+            el.classList.add('shake');
+            setTimeout(() => el.classList.remove('shake'), 350);
+          }
+        });
+      }
+
+      updateStats(time, moves, matched, total) {
+        document.getElementById('timer').textContent = this.formatTime(time);
+        document.getElementById('moves').textContent = moves;
+        document.getElementById('pairs').textContent = `${matched}/${total}`;
+      }
+
+      formatTime(ms) {
+        const s = Math.floor(ms / 1000);
+        return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+      }
+
+      showVictory(time, moves, mismatches) {
+        document.getElementById('victory-time').textContent = this.formatTime(time);
+        document.getElementById('victory-moves').textContent = moves;
+        document.getElementById('victory-mismatches').textContent = mismatches;
+        const msgs = ['Excellent memory!', 'Brilliant!', 'Outstanding!', 'Well played!', 'Impressive!'];
+        document.getElementById('victory-message').textContent = msgs[Math.floor(Math.random() * msgs.length)];
+        document.getElementById('victory-screen').classList.add('active');
+        this.createConfetti();
+      }
+
+      createConfetti() {
+        const colors = ['#f5f0e6', '#e8dcc8', '#d4c4a8', '#b8a888', '#7cb87c'];
+        const container = document.createElement('div');
+        container.className = 'confetti';
+        document.body.appendChild(container);
+        for (let i = 0; i < 40; i++) {
+          const piece = document.createElement('div');
+          piece.className = 'confetti-piece';
+          piece.style.cssText = `
+            left: ${Math.random() * 100}vw;
+            top: -10px;
+            background: ${colors[Math.floor(Math.random() * colors.length)]};
+            transform: rotate(${Math.random() * 360}deg);
+            animation: confetti-fall ${1.8 + Math.random() * 1.5}s ease-out forwards;
+            animation-delay: ${Math.random() * 0.4}s;`;
+          container.appendChild(piece);
+        }
+        setTimeout(() => container.remove(), 3500);
+      }
+
+      announce(message) {
+        document.getElementById('announcer').textContent = message;
+      }
+    }
+
+    class GameState {
+      constructor() { this.reset(); }
+      reset() {
+        this.difficulty = 'standard';
+        this.cards = [];
+        this.flippedCards = [];
+        this.matchedPairs = 0;
+        this.totalPairs = 0;
+        this.moves = 0;
+        this.mismatches = 0;
+        this.startTime = null;
+        this.elapsedTime = 0;
+        this.isLocked = false;
+        this.seed = Date.now();
+      }
+    }
+
+    class MemoryGame {
+      constructor() {
+        this.state = new GameState();
+        this.audio = new AudioManager();
+        this.renderer = new Renderer(document.getElementById('game-grid'));
+        this.timerRAF = null;
+        this.focusedIndex = 0;
+      }
+
+      init() {
+        this.bindEvents();
+        this.loadSettings();
+      }
+
+      loadSettings() {
+        const showLabels = localStorage.getItem('mc2-labels') === 'true';
+        document.getElementById('game-grid').classList.toggle('show-labels', showLabels);
+        document.getElementById('toggle-labels').classList.toggle('active', showLabels);
+        document.getElementById('toggle-sfx').classList.toggle('active', localStorage.getItem('mc2-sfx') !== 'false');
+        document.getElementById('toggle-music').classList.toggle('active', localStorage.getItem('mc2-music') !== 'false');
+      }
+
+      bindEvents() {
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+          btn.addEventListener('click', () => this.selectDifficulty(btn.dataset.difficulty));
+        });
+        document.getElementById('btn-start').addEventListener('click', () => this.startGame());
+        document.getElementById('btn-restart').addEventListener('click', () => this.restart());
+        document.getElementById('btn-sound').addEventListener('click', () => this.toggleMasterSound());
+        document.getElementById('btn-settings').addEventListener('click', () => this.showSettings());
+        document.getElementById('btn-close-settings').addEventListener('click', () => this.hideSettings());
+        document.getElementById('toggle-sfx').addEventListener('click', (e) => this.toggleSetting(e.target, 'sfx'));
+        document.getElementById('toggle-music').addEventListener('click', (e) => this.toggleSetting(e.target, 'music'));
+        document.getElementById('toggle-labels').addEventListener('click', (e) => this.toggleSetting(e.target, 'labels'));
+        document.getElementById('btn-play-again').addEventListener('click', () => this.restart());
+        document.getElementById('btn-new-game').addEventListener('click', () => this.showStartScreen());
+        document.getElementById('game-grid').addEventListener('click', (e) => {
+          const card = e.target.closest('.card');
+          if (card) this.handleCardClick(parseInt(card.dataset.index));
+        });
+        document.addEventListener('keydown', (e) => this.handleKeydown(e));
+        window.addEventListener('resize', () => this.updateColumns());
+      }
+
+      selectDifficulty(difficulty) {
+        document.querySelectorAll('.difficulty-btn').forEach(btn => {
+          const sel = btn.dataset.difficulty === difficulty;
+          btn.classList.toggle('selected', sel);
+          btn.setAttribute('aria-checked', sel);
+        });
+        this.state.difficulty = difficulty;
+      }
+
+      async startGame() {
+        await this.audio.init();
+        document.getElementById('start-screen').classList.remove('active');
+        const config = CONFIG.difficulties[this.state.difficulty];
+        this.state.cards = Shuffler.generateDeck(config.figures, this.state.seed);
+        this.state.totalPairs = config.pairs;
+        this.state.matchedPairs = 0;
+        this.state.moves = 0;
+        this.state.mismatches = 0;
+        this.state.flippedCards = [];
+        this.state.isLocked = false;
+        const cols = window.innerWidth < 600 ? config.cols.mobile : config.cols.desktop;
+        this.renderer.renderGrid(this.state.cards, cols);
+        this.renderer.updateStats(0, 0, 0, this.state.totalPairs);
+        this.state.startTime = Date.now();
+        this.startTimer();
+        this.audio.startAmbient();
+        this.renderer.announce(`Game started with ${this.state.totalPairs} pairs.`);
+      }
+
+      handleCardClick(index) {
+        if (this.state.isLocked) return;
+        const card = this.state.cards[index];
+        if (!card || card.matched) return;
+        if (this.state.flippedCards.includes(index)) return;
+        this.audio.playFlip();
+        this.renderer.flipCard(card.id, true);
+        this.state.flippedCards.push(index);
+        if (this.state.flippedCards.length === 2) this.checkMatch();
+      }
+
+      checkMatch() {
+        this.state.isLocked = true;
+        this.state.moves++;
+        const [idx1, idx2] = this.state.flippedCards;
+        const card1 = this.state.cards[idx1];
+        const card2 = this.state.cards[idx2];
+        if (card1.figureId === card2.figureId) this.handleMatch(card1, card2);
+        else this.handleMismatch(card1, card2);
+        this.renderer.updateStats(Date.now() - this.state.startTime, this.state.moves, this.state.matchedPairs, this.state.totalPairs);
+      }
+
+      handleMatch(card1, card2) {
+        setTimeout(() => {
+          this.audio.playMatch();
+          card1.matched = true;
+          card2.matched = true;
+          this.state.matchedPairs++;
+          this.renderer.showMatch(card1.id, card2.id);
+          this.state.flippedCards = [];
+          this.state.isLocked = false;
+          this.renderer.updateStats(Date.now() - this.state.startTime, this.state.moves, this.state.matchedPairs, this.state.totalPairs);
+          if (this.state.matchedPairs === this.state.totalPairs) this.handleWin();
+        }, CONFIG.timing.matchLock);
+      }
+
+      handleMismatch(card1, card2) {
+        this.state.mismatches++;
+        setTimeout(() => {
+          this.audio.playMismatch();
+          this.renderer.showMismatch(card1.id, card2.id);
+        }, CONFIG.timing.mismatchReveal / 2);
+        setTimeout(() => {
+          this.renderer.flipCard(card1.id, false);
+          this.renderer.flipCard(card2.id, false);
+          this.state.flippedCards = [];
+          this.state.isLocked = false;
+        }, CONFIG.timing.mismatchReveal);
+      }
+
+      handleWin() {
+        this.stopTimer();
+        this.audio.stopAmbient();
+        setTimeout(() => {
+          this.audio.playWin();
+          const finalTime = this.state.elapsedTime + (this.state.mismatches * CONFIG.scoring.mismatchPenalty);
+          this.renderer.showVictory(finalTime, this.state.moves, this.state.mismatches);
+        }, CONFIG.timing.winDelay);
+      }
+
+      restart() {
+        this.stopTimer();
+        this.audio.stopAmbient();
+        document.getElementById('victory-screen').classList.remove('active');
+        this.state.seed = Date.now();
+        this.startGame();
+      }
+
+      showStartScreen() {
+        this.stopTimer();
+        this.audio.stopAmbient();
+        document.getElementById('victory-screen').classList.remove('active');
+        document.getElementById('start-screen').classList.add('active');
+        this.state.reset();
+      }
+
+      showSettings() { document.getElementById('settings-screen').classList.add('active'); }
+      hideSettings() { document.getElementById('settings-screen').classList.remove('active'); }
+
+      toggleSetting(toggle, setting) {
+        const isActive = !toggle.classList.contains('active');
+        toggle.classList.toggle('active', isActive);
+        toggle.setAttribute('aria-checked', isActive);
+        switch(setting) {
+          case 'sfx':
+            this.audio.sfxEnabled = isActive;
+            this.audio.updateGains();
+            this.audio.saveSettings();
+            break;
+          case 'music':
+            this.audio.musicEnabled = isActive;
+            this.audio.updateGains();
+            this.audio.saveSettings();
+            if (!isActive) this.audio.stopAmbient();
+            else if (this.state.startTime) this.audio.startAmbient();
+            break;
+          case 'labels':
+            document.getElementById('game-grid').classList.toggle('show-labels', isActive);
+            localStorage.setItem('mc2-labels', isActive);
+            break;
+        }
+      }
+
+      toggleMasterSound() {
+        const waves = document.getElementById('sound-waves');
+        const isMuted = waves.style.display === 'none';
+        waves.style.display = isMuted ? '' : 'none';
+        this.audio.sfxEnabled = isMuted;
+        this.audio.musicEnabled = isMuted;
+        this.audio.updateGains();
+        if (!isMuted) this.audio.stopAmbient();
+        else if (this.state.startTime) this.audio.startAmbient();
+        document.getElementById('toggle-sfx').classList.toggle('active', isMuted);
+        document.getElementById('toggle-music').classList.toggle('active', isMuted);
+      }
+
+      handleKeydown(e) {
+        if (e.key === 'Escape') {
+          if (document.getElementById('settings-screen').classList.contains('active')) {
+            this.hideSettings();
+            return;
+          }
+        }
+        if (!this.state.startTime ||
+            document.getElementById('start-screen').classList.contains('active') ||
+            document.getElementById('victory-screen').classList.contains('active') ||
+            document.getElementById('settings-screen').classList.contains('active')) return;
+        const cols = parseInt(document.getElementById('game-grid').dataset.cols);
+        const total = this.state.cards.length;
+        switch(e.key) {
+          case 'ArrowUp': e.preventDefault(); this.focusedIndex = Math.max(0, this.focusedIndex - cols); this.focusCard(this.focusedIndex); break;
+          case 'ArrowDown': e.preventDefault(); this.focusedIndex = Math.min(total - 1, this.focusedIndex + cols); this.focusCard(this.focusedIndex); break;
+          case 'ArrowLeft': e.preventDefault(); this.focusedIndex = Math.max(0, this.focusedIndex - 1); this.focusCard(this.focusedIndex); break;
+          case 'ArrowRight': e.preventDefault(); this.focusedIndex = Math.min(total - 1, this.focusedIndex + 1); this.focusCard(this.focusedIndex); break;
+          case 'Enter': case ' ': e.preventDefault(); this.handleCardClick(this.focusedIndex); break;
+        }
+      }
+
+      focusCard(index) {
+        const cards = document.querySelectorAll('.card');
+        if (cards[index]) cards[index].focus();
+      }
+
+      startTimer() {
+        const tick = () => {
+          this.state.elapsedTime = Date.now() - this.state.startTime;
+          this.renderer.updateStats(this.state.elapsedTime, this.state.moves, this.state.matchedPairs, this.state.totalPairs);
+          this.timerRAF = requestAnimationFrame(tick);
+        };
+        this.timerRAF = requestAnimationFrame(tick);
+      }
+
+      stopTimer() {
+        if (this.timerRAF) { cancelAnimationFrame(this.timerRAF); this.timerRAF = null; }
+      }
+
+      updateColumns() {
+        if (!this.state.startTime) return;
+        const config = CONFIG.difficulties[this.state.difficulty];
+        const cols = window.innerWidth < 600 ? config.cols.mobile : config.cols.desktop;
+        document.getElementById('game-grid').dataset.cols = cols;
+      }
+    }
+
+    let game;
+    document.addEventListener('DOMContentLoaded', () => {
+      game = new MemoryGame();
+      game.init();
+    });
+  </script>
+</body>
+</html>
